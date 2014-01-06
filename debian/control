@@ -1,0 +1,15 @@
+Source: quicktill-nfc-bridge
+Section: unknown
+Priority: extra
+Maintainer: Stephen Early <sde@individualpubs.co.uk>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+Homepage: https://github.com/sde1000/quicktill-nfc-bridge
+
+Package: quicktill-nfc-bridge
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Convert NFC card taps to quicktill user tokens
+ quicktill-nfc-bridge converts NFC card taps on an ACR122U NFC card
+ reader into quicktill user tokens delivered as UDP packets to
+ localhost:8455.
