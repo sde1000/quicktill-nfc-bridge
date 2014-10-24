@@ -4,7 +4,7 @@ quicktill-nfc-bridge
 This is a quick and dirty interface between libnfc and quicktill, to
 convert NFC card taps on an ACR122U NFC reader into user tokens
 delivered as UDP packets to localhost:8455.  It's intended for use
-with Ubuntu 12.04, but might work with later versions as well.
+with Ubuntu 14.04, but might work with later versions as well.
 
 Copying
 -------
