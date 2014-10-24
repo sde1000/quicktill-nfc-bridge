@@ -1,3 +1,6 @@
 *.o
 *~
 quicktill-nfc-bridge
+debian/files
+debian/*.debhelper.log
+debian/*.substvars
