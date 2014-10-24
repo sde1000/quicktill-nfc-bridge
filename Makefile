@@ -1,7 +1,5 @@
 .PHONY: all clean install
 
-libnfcdir=../libnfc-1.7.0
-
 # Places to install to
 sbindir=usr/sbin/
 upstartdir=etc/init/
@@ -24,4 +22,4 @@ install:	all
 
 quicktill-nfc-bridge:	quicktill-nfc-bridge.o
 	gcc -o quicktill-nfc-bridge quicktill-nfc-bridge.o \
-	$(libnfcdir)/libnfc/.libs/libnfc.a -lusb
+	-lnfc

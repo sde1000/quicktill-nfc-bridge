@@ -27,17 +27,7 @@ link](http://www.gnu.org/licenses/).
 Building
 --------
 
-Start with this repository as the current working directory.  Download
-libnfc-1.7.0 from
-[code.google.com](https://code.google.com/p/libnfc/downloads/detail?name=libnfc-1.7.0.tar.bz2),
-extract it in the parent directory of this repository and build it:
-
-    cd ..
-    wget https://libnfc.googlecode.com/files/libnfc-1.7.0.tar.bz2
-    tar xjf libnfc-1.7.0.tar.bz2
-    cd libnfc-1.7.0/
-    ./configure
-    make
+Make sure the 'libnfc-dev' package is installed.
 
 To build quicktill-nfc-bridge, start with this repository as the
 current working directory:
@@ -46,4 +36,4 @@ current working directory:
 
 To build the Debian package:
 
-    fakeroot debian/rules binary
+    dpkg-buildpackage
