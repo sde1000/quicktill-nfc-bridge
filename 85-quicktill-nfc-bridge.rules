@@ -1,1 +1,0 @@
-SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="072f", ATTRS{idProduct}=="2200", RUN+="/lib/quicktill-nfc-bridge/start-quicktill-nfc-bridge.sh" # ACR122U

@@ -21,8 +21,8 @@ sprint_hex(char *buf,size_t buflen,
   buf[0]=0;
 }
 
-int
-main(int argc, const char *argv[])
+static void
+bridge(const char *connstring)
 {
   nfc_device *pnd;
   nfc_target nt[10];
@@ -40,10 +40,14 @@ main(int argc, const char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  pnd = nfc_open(context, NULL);
+  pnd = nfc_open(context, connstring);
  
   if (pnd == NULL) {
-    fprintf(stderr,"ERROR: Unable to open NFC device.\n");
+    if (connstring == NULL) {
+      fprintf(stderr,"ERROR: Unable to open any NFC device.\n");
+    } else {
+      fprintf(stderr,"ERROR: Unable to open NFC device '%s'.\n",connstring);
+    }
     exit(EXIT_FAILURE);
   }
 
@@ -97,5 +101,43 @@ main(int argc, const char *argv[])
 
   nfc_close(pnd);
   nfc_exit(context);
+  exit(EXIT_SUCCESS);
+}
+
+static void list(void)
+{
+  nfc_context *context;
+  nfc_connstring ncs[10];
+  size_t number_found;
+  int i;
+
+  nfc_init(&context);
+  if (context == NULL) {
+    fprintf(stderr,"Unable to init libnfc (malloc)\n");
+    exit(EXIT_FAILURE);
+  }
+
+  number_found=nfc_list_devices(context,ncs,10);
+  printf("%zu devices found:\n",number_found);
+  for (i=0; i<number_found; i++) {
+    printf("%s\n",ncs[i]);
+  }
+
+  nfc_exit(context);
+}
+
+int main(int argc, const char *argv[])
+{
+  if (argc < 2) bridge(NULL);
+  else if (argc == 2) {
+    if (strcmp(argv[1],"-l")==0) {
+      list();
+    } else {
+      bridge(argv[1]);
+    }
+  }
+  else {
+    printf("Usage: %s -l | connection string\n",argv[0]);
+  }
   exit(EXIT_SUCCESS);
 }

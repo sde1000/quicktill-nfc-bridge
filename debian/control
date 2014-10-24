@@ -2,7 +2,7 @@ Source: quicktill-nfc-bridge
 Section: unknown
 Priority: extra
 Maintainer: Stephen Early <sde@individualpubs.co.uk>
-Build-Depends: debhelper (>= 8.0.0)
+Build-Depends: debhelper (>= 8.0.0), libusb-dev
 Standards-Version: 3.9.4
 Homepage: https://github.com/sde1000/quicktill-nfc-bridge
 
