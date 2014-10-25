@@ -4,8 +4,7 @@
 sbindir=usr/sbin/
 upstartdir=etc/init/
 
-CFLAGS:=-Wall -I$(libnfcdir)/include/
-LDFLAGS:=-L $(libnfcdir)/
+CFLAGS:=-Wall
 
 all:	quicktill-nfc-bridge
 
