@@ -1,0 +1,5 @@
+[Unit]
+Description=NFC reader to quicktill bridge on %i
+
+[Service]
+ExecStart=/usr/sbin/quicktill-nfc-bridge %i
