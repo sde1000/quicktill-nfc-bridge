@@ -1,3 +1,9 @@
+quicktill-nfc-bridge (1.4) stable; urgency=low
+
+  * Use more recent debhelper compat level
+
+ -- Stephen Early <steve@assorted.org.uk>  Wed, 18 Nov 2020 17:49:29 +0000
+
 quicktill-nfc-bridge (1.3) stable; urgency=low
 
   * Add another blacklist entry

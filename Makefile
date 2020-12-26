@@ -2,7 +2,6 @@
 
 # Places to install to
 sbindir=usr/sbin/
-upstartdir=etc/init/
 systemddir=lib/systemd/system/
 
 CFLAGS:=-Wall
@@ -18,7 +17,6 @@ install:	all
 	install -d $(DESTDIR)/$(systemddir)
 	install -d $(DESTDIR)/etc/modprobe.d/
 	install -s quicktill-nfc-bridge $(DESTDIR)/$(sbindir)
-	install -m 644 quicktill-nfc-bridge.conf $(DESTDIR)/$(upstartdir)
 	install -m 644 quicktill-nfc-bridge@.service $(DESTDIR)/$(systemddir)
 	install -m 644 blacklist-quicktill.conf $(DESTDIR)/etc/modprobe.d/
 
