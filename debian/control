@@ -2,14 +2,14 @@ Source: quicktill-nfc-bridge
 Section: unknown
 Priority: extra
 Maintainer: Stephen Early <steve@assorted.org.uk>
-Build-Depends: debhelper (>= 11.0.0), debhelper-compat (= 11), libnfc-dev
+Build-Depends: debhelper (>= 11.0.0), debhelper-compat (= 11)
 Standards-Version: 3.9.4
 Homepage: https://github.com/sde1000/quicktill-nfc-bridge
 
 Package: quicktill-nfc-bridge
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Architecture: all
+Depends: ${misc:Depends}, python3-pyscard (>= 1.9), pcscd (>= 1.8)
 Description: Convert NFC card taps to quicktill user tokens
- quicktill-nfc-bridge converts NFC card taps on an ACR122U NFC card
- reader into quicktill user tokens delivered as UDP packets to
+ quicktill-nfc-bridge converts NFC card taps on CCID-compatible NFC
+ card readers into quicktill user tokens delivered as UDP packets to
  localhost:8455.

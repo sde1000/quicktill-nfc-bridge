@@ -1,3 +1,9 @@
+quicktill-nfc-bridge (2.0) stable; urgency=low
+
+  * Rewrite in python and use pcsc instead of libnfc
+
+ -- Stephen Early <steve@assorted.org.uk>  Thu, 15 Apr 2021 18:42:05 +0100
+
 quicktill-nfc-bridge (1.4) stable; urgency=low
 
   * Use more recent debhelper compat level

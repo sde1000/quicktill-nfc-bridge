@@ -1,7 +1,7 @@
-*.o
 *~
-quicktill-nfc-bridge
-debian/files
-debian/*.debhelper.log
-debian/*.substvars
-debian/debhelper-build-stamp
+/debian/quicktill-nfc-bridge/
+/debian/files
+/debian/*.debhelper
+/debian/*.debhelper.log
+/debian/*.substvars
+/debian/debhelper-build-stamp

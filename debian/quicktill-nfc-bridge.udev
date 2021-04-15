@@ -1,1 +1,0 @@
-SUBSYSTEM=="usb", ACTION=="add", ATTR{idVendor}=="072f", ATTR{idProduct}=="2200", TAG+="systemd", ENV{SYSTEMD_WANTS}="quicktill-nfc-bridge@acr122_usb:$env{BUSNUM}:$env{DEVNUM}"

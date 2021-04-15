@@ -3,11 +3,11 @@ Upstream-Name: quicktill-nfc-bridge
 Source: https://github.com/sde1000/quicktill-nfc-bridge
 
 Files: *
-Copyright: 2014 Stephen Early <sde@individualpubs.co.uk>
+Copyright: 2014–2021 Stephen Early <steve@assorted.org.uk>
 License: GPL-3.0+
 
 Files: debian/*
-Copyright: 2014 Stephen Early <sde@individualpubs.co.uk>
+Copyright: 2014–2021 Stephen Early <steve@assorted.org.uk>
 License: GPL-3.0+
 
 License: GPL-3.0+
