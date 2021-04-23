@@ -17,6 +17,10 @@
 
 from smartcard.scard import *
 import socket
+import argparse
+import logging
+
+log = logging.getLogger("quicktill-nfc-bridge")
 
 class SCardException(Exception):
     def __init__(self, msg, result):
@@ -110,9 +114,10 @@ class PCSCContext:
         self.close()
 
 class ReaderMonitor:
-    def __init__(self, ctx, s=None):
+    def __init__(self, ctx, s, beep):
         self.ctx = ctx
         self.s = s
+        self.beep = beep
         self.readers = {} # name -> current state
         self.update_readers()
 
@@ -125,6 +130,7 @@ class ReaderMonitor:
                 self.new_reader(r)
         for r in list(self.readers.keys()):
             if r not in current_readers:
+                log.info("reader '%s' disconnected", r)
                 del self.readers[r]
 
     def await_changes(self, timeout=INFINITE):
@@ -144,14 +150,64 @@ class ReaderMonitor:
 
     def new_reader(self, r):
         # Called when a new reader is detected
-        if r.startswith("ACS ACR1252") or r.startswith("ACS ACR1255U-J1"):
+        log.info("new reader '%s' connected", r)
+        if r.startswith("ACS ACR122U "):
+            log.debug("initialising ACR122U")
             card = self.ctx.connect(r, SCARD_SHARE_DIRECT, SCARD_PROTOCOL_RAW)
             try:
-                apdu = [ 0xe0, 0x00, 0x00, 0x21, 0x01, 0x6f ]
+                apdu = [ 0xff, 0x00, 0x52, 0xff if self.beep else 0x00, 0x00 ]
                 out = card.control(SCARD_CTL_CODE(1), apdu)
+                log.debug("out=%r", out)
+            except SCardException:
+                log.info("ACR122U init failed")
+            finally:
+                card.close()
+        elif r.startswith("ACS ACR1252"):
+            log.debug("initialising ACR1252")
+            # bits 6 and 7 control the LED colour: 0x80=red, 0x40=green
+            if self.beep:
+                desired_behaviour = 0xaf
+            else:
+                desired_behaviour = 0xa7
+            card = self.ctx.connect(r, SCARD_SHARE_DIRECT, SCARD_PROTOCOL_RAW)
+            try:
+                out = card.control(SCARD_CTL_CODE(1), [
+                    0xe0, 0x00, 0x00, 0x21, 0x00 ])
+                log.debug("read current behaviour: out=%r", out)
+                current_behaviour = out[5]
+                if current_behaviour != desired_behaviour:
+                    log.debug("setting new behaviour: %d", desired_behaviour)
+                    out = card.control(SCARD_CTL_CODE(1), [
+                        0xe0, 0x00, 0x00, 0x21, 0x01, desired_behaviour ])
+                    log.debug("set behaviour: out=%r", out)
             except SCardException:
                 pass
-            card.close()
+            finally:
+                card.close()
+        elif r.startswith("ACS ACR1255U-J1"):
+            log.debug("initialising ACR1255")
+            # XXX bit 6 (0x40) of behaviour must not be set for this device
+            if self.beep:
+                desired_behaviour = 0xaf
+            else:
+                desired_behaviour = 0xa7
+            card = self.ctx.connect(r, SCARD_SHARE_DIRECT, SCARD_PROTOCOL_RAW)
+            try:
+                out = card.control(SCARD_CTL_CODE(1), [
+                    0xe0, 0x00, 0x00, 0x21, 0x00 ])
+                log.debug("read current behaviour: out=%r", out)
+                current_behaviour = out[5]
+                if current_behaviour != desired_behaviour:
+                    log.debug("setting new behaviour: %d", desired_behaviour)
+                    out = card.control(SCARD_CTL_CODE(1), [
+                        0xe0, 0x00, 0x00, 0x21, 0x01, desired_behaviour ])
+                    log.debug("set behaviour: out=%r", out)
+            except SCardException:
+                pass
+            finally:
+                card.close()
+        else:
+            log.info("don't know how to set beep behaviour for this reader")
 
     def new_card(self, r):
         # Called when a card insertion is detected
@@ -170,13 +226,38 @@ class ReaderMonitor:
         if sw1 != 0x90 or sw2 != 0x00:
             return # Error
         nfc = "nfc:" + ''.join(f"{x:02x}" for x in out[:-2])
-        if self.s:
-            self.s.sendto(nfc.encode('utf-8'), ('127.0.0.1', 8455))
+        log.info('card read: %s', nfc)
+        try:
+            self.s.send(nfc.encode('utf-8'))
+        except ConnectionRefusedError:
+            log.debug('udp send: connection refused')
 
-if __name__ == "__main__":
+def run(args):
     ctx = PCSCContext()
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    mon = ReaderMonitor(ctx, s)
+    s.connect((args.host, args.port))
+    mon = ReaderMonitor(ctx, s, args.beep)
 
     while True:
         mon.await_changes(timeout=INFINITE)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Read NFC card UIDs")
+    parser.add_argument('--beep', default=False, action="store_true",
+                        help="Configure readers to beep on card detection")
+    parser.add_argument('--host', default="127.0.0.1",
+                        help="Host to deliver packets to")
+    parser.add_argument('--port', default=8455, type=int,
+                        help="Port to deliver packets to")
+    parser.add_argument('--verbose', '-v', default=False, action="store_true",
+                        help="Print details as cards and readers are detected")
+    parser.add_argument('--debug', default=False, action="store_true",
+                        help="Enable debug output")
+    args = parser.parse_args()
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+    elif args.verbose:
+        logging.basicConfig(level=logging.INFO)
+    else:
+        logging.basicConfig(level=logging.WARNING)
+    run(args)

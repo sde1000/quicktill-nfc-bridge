@@ -1,3 +1,9 @@
+quicktill-nfc-bridge (2.1) stable; urgency=low
+
+  * Add options to control reader beeps on card detection
+
+ -- Stephen Early <steve@assorted.org.uk>  Fri, 23 Apr 2021 09:25:38 +0100
+
 quicktill-nfc-bridge (2.0) stable; urgency=low
 
   * Rewrite in python and use pcsc instead of libnfc
