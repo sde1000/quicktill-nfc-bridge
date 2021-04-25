@@ -239,7 +239,12 @@ def run(args):
     mon = ReaderMonitor(ctx, s, args.beep)
 
     while True:
-        mon.await_changes(timeout=INFINITE)
+        # XXX Although timeout=INFINITE works correctly on PC with
+        # pcsc-1.8.26, it doesn't on RPI with pcsc-1.8.24: it
+        # busy-waits instead. Let's use a large but not infinite
+        # timeout for now and hope pcsc gets updated in Debian Buster
+        # soon!  (1.8.26 changed from select() to poll())
+        mon.await_changes(timeout=10000)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Read NFC card UIDs")
