@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# To turn off card removed beeps: this will only work if the driver
-# has been configured to allow CCID escape.
+# To turn off card removed/inserted beeps: this will only work if the
+# driver has been configured to allow CCID escape.
 #
 # On Linux: edit /etc/libccid_Info.plist and set key
 # ifdDriverOptions to 0x0001
@@ -11,9 +11,11 @@
 # On Windows: use SCARD_CTL_CODE(3500) instead of
 # SCARD_CTL_CODE(1)
 #
-# The setting is stored in non-volatile memory in the reader, so once
-# the beeps have been turned off on a particular reader the config
-# file can be returned to its original state.
+# On ACR1252 and ACR1255, the setting is stored in non-volatile memory
+# in the reader, so once the beeps have been turned off on a
+# particular reader the config file can be returned to its original
+# state. ACR122 does not have any non-volatile storage and the beeps
+# must be turned off every time it is plugged in.
 
 from smartcard.scard import *
 import socket
