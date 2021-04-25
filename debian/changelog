@@ -1,3 +1,9 @@
+quicktill-nfc-bridge (2.2) stable; urgency=low
+
+  * Temporary fix for busy looping on Raspbian/Debian Buster
+
+ -- Stephen Early <steve@assorted.org.uk>  Sun, 25 Apr 2021 20:33:13 +0100
+
 quicktill-nfc-bridge (2.1) stable; urgency=low
 
   * Add options to control reader beeps on card detection
