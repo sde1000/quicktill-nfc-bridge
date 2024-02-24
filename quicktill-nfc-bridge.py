@@ -17,16 +17,27 @@
 # state. ACR122 does not have any non-volatile storage and the beeps
 # must be turned off every time it is plugged in.
 
-from smartcard.scard import *
+from smartcard.scard import SCARD_PROTOCOL_T0, SCARD_PCI_T0, \
+    SCARD_PROTOCOL_T1, SCARD_PCI_T1, SCARD_PROTOCOL_RAW, SCARD_PCI_RAW, \
+    SCARD_LEAVE_CARD, SCARD_S_SUCCESS, SCARD_SCOPE_SYSTEM, \
+    SCARD_E_NO_READERS_AVAILABLE, SCARD_E_TIMEOUT, SCARD_STATE_UNAWARE, \
+    SCARD_STATE_CHANGED, SCARD_STATE_PRESENT, SCARD_SHARE_DIRECT, \
+    SCARD_SHARE_SHARED, INFINITE, SCARD_CTL_CODE, \
+    SCardGetErrorMessage, SCardDisconnect, SCardControl, \
+    SCardTransmit, SCardEstablishContext, SCardReleaseContext, \
+    SCardGetStatusChange, SCardConnect, SCardListReaders
+
 import socket
 import argparse
 import logging
 
 log = logging.getLogger("quicktill-nfc-bridge")
 
+
 class SCardException(Exception):
     def __init__(self, msg, result):
         super().__init__(msg + f": {SCardGetErrorMessage(result)}")
+
 
 class PCSCCard:
     pci_headers = {
@@ -41,7 +52,7 @@ class PCSCCard:
 
     def close(self, disposition=SCARD_LEAVE_CARD):
         if self.handle:
-            result = SCardDisconnect(self.handle, disposition)
+            SCardDisconnect(self.handle, disposition)
             self.handle = None
 
     def __del__(self):
@@ -61,6 +72,7 @@ class PCSCCard:
             raise SCardException("Failed to transmit", result)
         return response
 
+
 class PCSCContext:
     pnp_notification = r"\\?PnP?\Notification"
 
@@ -74,7 +86,7 @@ class PCSCContext:
     def close(self):
         if self.context:
             SCardReleaseContext(self.context)
-            self.hcontext = None
+            self.context = None
 
     def getReaderNames(self):
         result, pcscreaders = SCardListReaders(self.context, [])
@@ -111,16 +123,17 @@ class PCSCContext:
         if result != SCARD_S_SUCCESS:
             raise SCardException("Failed to connect", result)
         return PCSCCard(card_handle, active_protocol)
-        
+
     def __del__(self):
         self.close()
+
 
 class ReaderMonitor:
     def __init__(self, ctx, s, beep):
         self.ctx = ctx
         self.s = s
         self.beep = beep
-        self.readers = {} # name -> current state
+        self.readers = {}  # name -> current state
         self.update_readers()
 
     def update_readers(self):
@@ -157,7 +170,7 @@ class ReaderMonitor:
             log.debug("initialising ACR122U")
             card = self.ctx.connect(r, SCARD_SHARE_DIRECT, SCARD_PROTOCOL_RAW)
             try:
-                apdu = [ 0xff, 0x00, 0x52, 0xff if self.beep else 0x00, 0x00 ]
+                apdu = [0xff, 0x00, 0x52, 0xff if self.beep else 0x00, 0x00]
                 out = card.control(SCARD_CTL_CODE(1), apdu)
                 log.debug("out=%r", out)
             except SCardException:
@@ -174,13 +187,13 @@ class ReaderMonitor:
             card = self.ctx.connect(r, SCARD_SHARE_DIRECT, SCARD_PROTOCOL_RAW)
             try:
                 out = card.control(SCARD_CTL_CODE(1), [
-                    0xe0, 0x00, 0x00, 0x21, 0x00 ])
+                    0xe0, 0x00, 0x00, 0x21, 0x00])
                 log.debug("read current behaviour: out=%r", out)
                 current_behaviour = out[5]
                 if current_behaviour != desired_behaviour:
                     log.debug("setting new behaviour: %d", desired_behaviour)
                     out = card.control(SCARD_CTL_CODE(1), [
-                        0xe0, 0x00, 0x00, 0x21, 0x01, desired_behaviour ])
+                        0xe0, 0x00, 0x00, 0x21, 0x01, desired_behaviour])
                     log.debug("set behaviour: out=%r", out)
             except SCardException:
                 pass
@@ -196,13 +209,13 @@ class ReaderMonitor:
             card = self.ctx.connect(r, SCARD_SHARE_DIRECT, SCARD_PROTOCOL_RAW)
             try:
                 out = card.control(SCARD_CTL_CODE(1), [
-                    0xe0, 0x00, 0x00, 0x21, 0x00 ])
+                    0xe0, 0x00, 0x00, 0x21, 0x00])
                 log.debug("read current behaviour: out=%r", out)
                 current_behaviour = out[5]
                 if current_behaviour != desired_behaviour:
                     log.debug("setting new behaviour: %d", desired_behaviour)
                     out = card.control(SCARD_CTL_CODE(1), [
-                        0xe0, 0x00, 0x00, 0x21, 0x01, desired_behaviour ])
+                        0xe0, 0x00, 0x00, 0x21, 0x01, desired_behaviour])
                     log.debug("set behaviour: out=%r", out)
             except SCardException:
                 pass
@@ -218,21 +231,22 @@ class ReaderMonitor:
             r, SCARD_SHARE_SHARED,
             SCARD_PROTOCOL_T0 | SCARD_PROTOCOL_T1 | SCARD_PROTOCOL_RAW)
         try:
-            out = card.transmit([ 0xff, 0xca, 0x00, 0x00, 0x00 ])
+            out = card.transmit([0xff, 0xca, 0x00, 0x00, 0x00])
         finally:
             card.close()
         if len(out) < 2:
-            return # Not a valid response
+            return  # Not a valid response
         sw1 = out[-2]
         sw2 = out[-1]
         if sw1 != 0x90 or sw2 != 0x00:
-            return # Error
+            return  # Error
         nfc = "nfc:" + ''.join(f"{x:02x}" for x in out[:-2])
         log.info('card read: %s', nfc)
         try:
             self.s.send(nfc.encode('utf-8'))
         except ConnectionRefusedError:
             log.debug('udp send: connection refused')
+
 
 def run(args):
     ctx = PCSCContext()
@@ -247,6 +261,7 @@ def run(args):
         # timeout for now and hope pcsc gets updated in Debian Buster
         # soon!  (1.8.26 changed from select() to poll())
         mon.await_changes(timeout=10000)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Read NFC card UIDs")

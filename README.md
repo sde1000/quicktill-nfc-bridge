@@ -34,7 +34,7 @@ ExecStart=/usr/sbin/quicktill-nfc-bridge --beep
 Copying
 -------
 
-quicktill-nfc-bridge is Copyright (C) 2014–2023 Stephen Early <steve@assorted.org.uk>
+quicktill-nfc-bridge is Copyright (C) 2014–2024 Stephen Early <steve@assorted.org.uk>
 
 It is distributed under the terms of the GNU General Public License
 as published by the Free Software Foundation, either version 3

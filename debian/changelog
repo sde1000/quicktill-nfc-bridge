@@ -1,3 +1,9 @@
+quicktill-nfc-bridge (2.3) stable; urgency=low
+
+  * Tidy up to pass flake8, fix typo in PCSCContext.Close()
+
+ -- Stephen Early <steve@assorted.org.uk>  Sat, 24 Feb 2024 14:32:25 +0000
+
 quicktill-nfc-bridge (2.2) stable; urgency=low
 
   * Temporary fix for busy looping on Raspbian/Debian Buster
