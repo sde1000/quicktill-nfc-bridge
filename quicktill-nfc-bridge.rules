@@ -1,0 +1,15 @@
+// Permit quicktill-nfc-bridge to access pcsc
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.debian.pcsc-lite.access_card" &&
+        subject.user == "quicktill-nfc-bridge") {
+            return polkit.Result.YES;
+    }
+});
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.debian.pcsc-lite.access_pcsc" &&
+        subject.user == "quicktill-nfc-bridge") {
+            return polkit.Result.YES;
+    }
+});

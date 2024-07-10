@@ -1,3 +1,9 @@
+quicktill-nfc-bridge (2.4) stable; urgency=low
+
+  * Add polkit rule to allow access to pcsc
+
+ -- Stephen Early <steve@assorted.org.uk>  Wed, 10 Jul 2024 11:40:19 +0100
+
 quicktill-nfc-bridge (2.3) stable; urgency=low
 
   * Tidy up to pass flake8, fix typo in PCSCContext.Close()

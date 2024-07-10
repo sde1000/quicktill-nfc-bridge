@@ -6,6 +6,7 @@ After=pcscd.service
 [Service]
 Type=simple
 DynamicUser=yes
+User=quicktill-nfc-bridge
 ExecStart=/usr/sbin/quicktill-nfc-bridge
 Restart=always
 RestartSec=10s
