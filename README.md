@@ -21,15 +21,9 @@ setting of `0x0000`. You may need to restart `pcscd` to pick up the
 configuration file change. ACR122 doesn't have any non-volatile memory
 so the beeps need turning off every time it's plugged in.
 
-If you want to keep card-inserted beeps, create
-`/etc/systemd/system/quicktill-nfc-bridge.service.d/override.conf` and
-override ExecStart to add the --beep option to the command line:
-
-```
-[Service]
-ExecStart=
-ExecStart=/usr/sbin/quicktill-nfc-bridge --beep
-```
+In order to wake up the screen when a NFC card tap occurs,
+quicktill-nfc-bridge creates a virtual keyboard and taps the left Ctrl
+key.
 
 Copying
 -------

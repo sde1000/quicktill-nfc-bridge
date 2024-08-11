@@ -1,3 +1,9 @@
+quicktill-nfc-bridge (2.5) stable; urgency=low
+
+  * Fake a keypress (left Ctrl) when a user token is received
+
+ -- Stephen Early <steve@assorted.org.uk>  Sun, 11 Aug 2024 14:47:25 +0100
+
 quicktill-nfc-bridge (2.4) stable; urgency=low
 
   * Add polkit rule to allow access to pcsc

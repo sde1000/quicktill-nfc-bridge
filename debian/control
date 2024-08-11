@@ -8,7 +8,8 @@ Homepage: https://github.com/sde1000/quicktill-nfc-bridge
 
 Package: quicktill-nfc-bridge
 Architecture: all
-Depends: ${misc:Depends}, python3-pyscard (>= 1.9), pcscd (>= 1.8)
+Depends: ${misc:Depends}, python3-pyscard (>= 1.9), pcscd (>= 1.8),
+  python3-sdnotify, python3-libevdev
 Description: Convert NFC card taps to quicktill user tokens
  quicktill-nfc-bridge converts NFC card taps on CCID-compatible NFC
  card readers into quicktill user tokens delivered as UDP packets to

@@ -4,10 +4,10 @@ BindsTo=pcscd.service
 After=pcscd.service
 
 [Service]
-Type=simple
+Type=notify
 DynamicUser=yes
 User=quicktill-nfc-bridge
-ExecStart=/usr/sbin/quicktill-nfc-bridge
+ExecStart=!/usr/sbin/quicktill-nfc-bridge --notify-startup --fake-keypress --setuser=quicktill-nfc-bridge
 Restart=always
 RestartSec=10s
 

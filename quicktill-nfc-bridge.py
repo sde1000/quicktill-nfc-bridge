@@ -30,8 +30,21 @@ from smartcard.scard import SCARD_PROTOCOL_T0, SCARD_PCI_T0, \
 import socket
 import argparse
 import logging
+import libevdev
+import pwd
+import os
+import sys
+import sdnotify
 
 log = logging.getLogger("quicktill-nfc-bridge")
+
+# Wake terminal by simulating brief press of left Ctrl key on fake keyboard
+keypress = [
+    libevdev.InputEvent(libevdev.EV_KEY.KEY_LEFTCTRL, 1),
+    libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT, 0),
+    libevdev.InputEvent(libevdev.EV_KEY.KEY_LEFTCTRL, 0),
+    libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT, 0),
+]
 
 
 class SCardException(Exception):
@@ -129,10 +142,11 @@ class PCSCContext:
 
 
 class ReaderMonitor:
-    def __init__(self, ctx, s, beep):
+    def __init__(self, ctx, s, beep, uinput):
         self.ctx = ctx
         self.s = s
         self.beep = beep
+        self.uinput = uinput
         self.readers = {}  # name -> current state
         self.update_readers()
 
@@ -242,6 +256,8 @@ class ReaderMonitor:
             return  # Error
         nfc = "nfc:" + ''.join(f"{x:02x}" for x in out[:-2])
         log.info('card read: %s', nfc)
+        if self.uinput:
+            self.uinput.send_events(keypress)
         try:
             self.s.send(nfc.encode('utf-8'))
         except ConnectionRefusedError:
@@ -249,18 +265,35 @@ class ReaderMonitor:
 
 
 def run(args):
+    uinput = None
+
+    if args.fake_keypress:
+        evdev = libevdev.Device()
+        evdev.name = "quicktill-nfc-bridge fake keyboard"
+        evdev.enable(libevdev.EV_KEY.KEY_LEFTCTRL)
+
+        uinput = evdev.create_uinput_device()
+
     ctx = PCSCContext()
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect((args.host, args.port))
-    mon = ReaderMonitor(ctx, s, args.beep)
+    mon = ReaderMonitor(ctx, s, args.beep, uinput)
+
+    if args.setuser:
+        try:
+            pwdb = pwd.getpwnam(args.setuser)
+        except KeyError:
+            log.fatal("Specified user does not exist for --setuid")
+            sys.exit(1)
+        os.setgid(pwdb.pw_gid)
+        os.setuid(pwdb.pw_uid)
+
+    if args.notify_startup:
+        log.debug("notifying startup complete to systemd")
+        sdnotify.SystemdNotifier().notify("READY=1")
 
     while True:
-        # XXX Although timeout=INFINITE works correctly on PC with
-        # pcsc-1.8.26, it doesn't on RPI with pcsc-1.8.24: it
-        # busy-waits instead. Let's use a large but not infinite
-        # timeout for now and hope pcsc gets updated in Debian Buster
-        # soon!  (1.8.26 changed from select() to poll())
-        mon.await_changes(timeout=10000)
+        mon.await_changes(timeout=INFINITE)
 
 
 if __name__ == "__main__":
@@ -275,6 +308,12 @@ if __name__ == "__main__":
                         help="Print details as cards and readers are detected")
     parser.add_argument('--debug', default=False, action="store_true",
                         help="Enable debug output")
+    parser.add_argument('--fake-keypress', default=False, action="store_true",
+                        help="Fake a keypress when a card is detected")
+    parser.add_argument('--notify-startup', default=False, action="store_true",
+                        help="Notify systemd when startup is complete")
+    parser.add_argument('--setuser', type=str, default=None,
+                        help="setuid to specified user after initialisation")
     args = parser.parse_args()
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
