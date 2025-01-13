@@ -1,3 +1,9 @@
+quicktill-nfc-bridge (2.6) stable; urgency=low
+
+  * Add dependency on libnss-systemd for dynamic userid support
+
+ -- Stephen Early <steve@assorted.org.uk>  Thu, 31 Oct 2024 15:43:43 +0000
+
 quicktill-nfc-bridge (2.5) stable; urgency=low
 
   * Fake a keypress (left Ctrl) when a user token is received
