@@ -7,28 +7,30 @@ delivered as UDP packets to localhost:8455.
 
 Any CCID compatible NFC reader should work: there's a standard way to
 retrieve contactless UIDs.  This package has additional code to deal
-with ACR122, ACR1252 and ACR1255 readers (with suitably recent
-firmware), to turn off the "beep on card insert/remove" options when
-the reader is discovered.
+with ACR122, ACR1252, ACR1255 and ACR1552 readers (with suitably
+recent firmware), to turn off the "beep on card insert/remove" options
+when the reader is discovered.  The beep will be turned off unless the
+`--beep` command-line option is used.
 
 The reader configuration code can only work when CCID escape is
 enabled in the pcsc driver. To do this, edit the driver config file
 (`/etc/libccid_Info.plist` on Linux) and set key `ifdDriverOptions` to
-`0x0001`.  On ACR1252 and ACR1255 the configuration is stored in
-non-volatile memory on the reader, so once all your readers have been
-configured you can change the driver config file back to the default
-setting of `0x0000`. You may need to restart `pcscd` to pick up the
-configuration file change. ACR122 doesn't have any non-volatile memory
-so the beeps need turning off every time it's plugged in.
+`0x0001`.  On ACR1252, ACR1255 and ACR1552 the configuration is stored
+in non-volatile memory on the reader, so once all your readers have
+been configured you can change the driver config file back to the
+default setting of `0x0000`. You may need to restart `pcscd` to pick
+up the configuration file change. ACR122 doesn't have any non-volatile
+memory so the beeps need turning off every time it's plugged in.
 
 In order to wake up the screen when a NFC card tap occurs,
-quicktill-nfc-bridge creates a virtual keyboard and taps the left Ctrl
-key.
+quicktill-nfc-bridge can be configured to create a virtual keyboard
+and tap the virtual left Ctrl key; use the `--fake-keypress` option to
+enable this.
 
 Copying
 -------
 
-quicktill-nfc-bridge is Copyright (C) 2014–2024 Stephen Early <steve@assorted.org.uk>
+quicktill-nfc-bridge is Copyright (C) 2014–2026 Stephen Early <steve@assorted.org.uk>
 
 It is distributed under the terms of the GNU General Public License
 as published by the Free Software Foundation, either version 3

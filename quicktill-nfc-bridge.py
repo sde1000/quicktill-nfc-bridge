@@ -171,11 +171,40 @@ class ReaderMonitor:
                 if eventstate & SCARD_STATE_CHANGED:
                     readers_changed = True
                 continue
-            self.readers[r] = eventstate
-            if eventstate & SCARD_STATE_PRESENT:
+            if (eventstate & SCARD_STATE_PRESENT) \
+               and not (self.readers[r] & SCARD_STATE_PRESENT):
+                log.debug("new card on reader %s", r)
                 self.new_card(r)
+            self.readers[r] = eventstate
         if readers_changed:
             self.update_readers()
+
+    @staticmethod
+    def _set_acs_ui_behaviour(card, desired_behaviour):
+        # ACS readers (except ACR122) have a UI behaviour control byte:
+        # Bit 0: Enable "card operation" LED
+        # Bit 1: Enable "polling status" LED
+        # Bit 2: Enable "activation status" LED
+        # Bit 3: Enable card insertion event buzzer
+        # Bit 4: Enable card removal event buzzer
+        # Bit 5: Enable reader power on buzzer
+        # Bit 6: GREEN colour select for status change (ACR1252 only)
+        # Bit 7: RED colour select for status change (not ACR1552)
+        #
+        # Bit 6 may only be set on ACR1252 and should be zero on all
+        # other devices. Bit 7 is not implemented on ACR1552.
+        #
+        # The UI behaviour is stored in NVM on the reader, so we only
+        # update it if a change is needed
+        out = card.control(SCARD_CTL_CODE(1), [
+            0xe0, 0x00, 0x00, 0x21, 0x00])
+        log.debug("read current behaviour: out=%r", out)
+        current_behaviour = out[5]
+        if current_behaviour != desired_behaviour:
+            log.debug("setting new behaviour: %d", desired_behaviour)
+            out = card.control(SCARD_CTL_CODE(1), [
+                0xe0, 0x00, 0x00, 0x21, 0x01, desired_behaviour])
+            log.debug("set behaviour: out=%r", out)
 
     def new_reader(self, r):
         # Called when a new reader is detected
@@ -194,21 +223,9 @@ class ReaderMonitor:
         elif r.startswith("ACS ACR1252"):
             log.debug("initialising ACR1252")
             # bits 6 and 7 control the LED colour: 0x80=red, 0x40=green
-            if self.beep:
-                desired_behaviour = 0xaf
-            else:
-                desired_behaviour = 0xa7
             card = self.ctx.connect(r, SCARD_SHARE_DIRECT, SCARD_PROTOCOL_RAW)
             try:
-                out = card.control(SCARD_CTL_CODE(1), [
-                    0xe0, 0x00, 0x00, 0x21, 0x00])
-                log.debug("read current behaviour: out=%r", out)
-                current_behaviour = out[5]
-                if current_behaviour != desired_behaviour:
-                    log.debug("setting new behaviour: %d", desired_behaviour)
-                    out = card.control(SCARD_CTL_CODE(1), [
-                        0xe0, 0x00, 0x00, 0x21, 0x01, desired_behaviour])
-                    log.debug("set behaviour: out=%r", out)
+                self._set_acs_ui_behaviour(card, 0xaf if self.beep else 0xa7)
             except SCardException:
                 pass
             finally:
@@ -216,34 +233,38 @@ class ReaderMonitor:
         elif r.startswith("ACS ACR1255U-J1"):
             log.debug("initialising ACR1255")
             # XXX bit 6 (0x40) of behaviour must not be set for this device
-            if self.beep:
-                desired_behaviour = 0xaf
-            else:
-                desired_behaviour = 0xa7
             card = self.ctx.connect(r, SCARD_SHARE_DIRECT, SCARD_PROTOCOL_RAW)
             try:
-                out = card.control(SCARD_CTL_CODE(1), [
-                    0xe0, 0x00, 0x00, 0x21, 0x00])
-                log.debug("read current behaviour: out=%r", out)
-                current_behaviour = out[5]
-                if current_behaviour != desired_behaviour:
-                    log.debug("setting new behaviour: %d", desired_behaviour)
-                    out = card.control(SCARD_CTL_CODE(1), [
-                        0xe0, 0x00, 0x00, 0x21, 0x01, desired_behaviour])
-                    log.debug("set behaviour: out=%r", out)
+                self._set_acs_ui_behaviour(card, 0xaf if self.beep else 0xa7)
             except SCardException:
                 pass
             finally:
                 card.close()
+        elif r.startswith("ACS ACR1552") and "Reader SAM" not in r:
+            log.debug("initialising ACR1552 PICC interface")
+            card = self.ctx.connect(r, SCARD_SHARE_DIRECT, SCARD_PROTOCOL_RAW)
+            try:
+                self._set_acs_ui_behaviour(card, 0x2f if self.beep else 0x27)
+            except SCardException:
+                pass
+            finally:
+                card.close()
+        elif r.startswith("ACS ACR1552") and "Reader SAM" in r:
+            log.debug("initialising ACR1552 SAM interface")
+            # Nothing to do — UI behaviour only implemented for PICC interface
         else:
-            log.info("don't know how to set beep behaviour for this reader")
+            log.info("don't know how to set beep behaviour for %s", r)
 
     def new_card(self, r):
         # Called when a card insertion is detected
         out = []
-        card = self.ctx.connect(
-            r, SCARD_SHARE_SHARED,
-            SCARD_PROTOCOL_T0 | SCARD_PROTOCOL_T1 | SCARD_PROTOCOL_RAW)
+        try:
+            card = self.ctx.connect(
+                r, SCARD_SHARE_SHARED,
+                SCARD_PROTOCOL_T0 | SCARD_PROTOCOL_T1 | SCARD_PROTOCOL_RAW)
+        except SCardException as e:
+            log.debug("connect on reader %s: %s", r, e)
+            return
         try:
             out = card.transmit([0xff, 0xca, 0x00, 0x00, 0x00])
         finally:
@@ -255,7 +276,7 @@ class ReaderMonitor:
         if sw1 != 0x90 or sw2 != 0x00:
             return  # Error
         nfc = "nfc:" + ''.join(f"{x:02x}" for x in out[:-2])
-        log.info('card read: %s', nfc)
+        log.info('card read on %r: %s', r, nfc)
         if self.uinput:
             self.uinput.send_events(keypress)
         try:
